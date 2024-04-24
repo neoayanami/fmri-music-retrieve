@@ -35,15 +35,13 @@ from nilearn.plotting import plot_contrast_matrix
 
 
 def load_data(subj,mask=False):
-    base_data_path="/home/matteo/data/fMRI_music_genre/ds003720-download/derivatives"
-    base_event_path="/home/matteo/data/fMRI_music_genre/ds003720-download"
-
+    base_data_path="/data01/data/fMRI_music_genre/ds003720-download/derivatives"
+    base_event_path="/data01/data/fMRI_music_genre/ds003720-download"
 
     data_path=opj(base_data_path,subj,"func")
     # event_path=opj(base_data_path,"events")
 
-    stim_dir="/home/matteo/data/fMRI_music_genre/data_wav/genres_original"
-
+    stim_dir="/data01/data/fMRI_music_genre/data_wav/genres_original"
 
     sessions=os.listdir(data_path)
     filenames=glob.glob(opj(data_path,"*-preproc_bold.nii.gz"))
@@ -51,8 +49,6 @@ def load_data(subj,mask=False):
     data=[]
     events=[]
     drop_first=0
-
-
 
     for fn in tqdm.tqdm(filenames):
         #load file
@@ -75,7 +71,8 @@ def load_data(subj,mask=False):
     masker.fit(data[0])
     report = masker.generate_report()
 
-    tgt_dir=f"preprocessed_data/{subj}"
+    # tgt_dir=f"preprocessed_data/{subj}"
+    tgt_dir=f"/data01/data/fMRI_music_genre/fmri_preproc_data/{subj}"
 
     if mask:
         print("Masking files..")
@@ -118,13 +115,11 @@ def load_data(subj,mask=False):
             for c, cond in enumerate(conds):
                     condidx = np.argwhere(run_events['category'].values == cond)
                     
-
                     # condvols = (run_events.onset.values[condidx]//TR).astype(np.int64).squeeze()
                     start_condvols=(run_events.onset.values[condidx]//TR).astype(np.int64)
                     indices=[]
                     condvols = np.array([np.arange(start_idx,start_idx+int(stimdur//TR)) for start_idx in start_condvols])
                     
-
                     run_design[condvols, c] = 1
 
             conditions.append(conds)
@@ -133,21 +128,6 @@ def load_data(subj,mask=False):
     print("Detrending fMRI data..")
 
     cleaned_data=[nilearn.signal.clean(d.T,detrend=True,standardize=True,t_r=TR) for d in data] # detrend and standardize
-
-    train_fmri=[]
-    test_fmri=[]
-    train_audio=[]
-    test_audio=[]
-    train_sr=[]
-    test_sr=[]
-
-    train_genre=[]
-    test_genre=[]
-
-    TR=1.5
-    stimdur=10
-    how_many_fmri_vols=10
-    fmri_vol_delay=3
 
     print("Preparing dataset..")
 
@@ -165,8 +145,6 @@ def load_data(subj,mask=False):
     train_genre=[]
     test_genre=[]
 
-    TR=1.5
-    stimdur=10
     how_many_fmri_vols=10
     fmri_vol_delay=3
 
@@ -219,14 +197,18 @@ def load_data(subj,mask=False):
 
     print("Audio feature extraction...")
 
+    resampler = torchaudio.transforms.Resample(orig_freq=22050, new_freq=48000)
+
     with torch.no_grad():
         for wv,sr in tqdm.tqdm(zip(train_audio,train_sr)):
+            wv = resampler(wv)
             inputs = feature_extractor(wv.squeeze(), return_tensors="pt",sampling_rate=48_000)
             audio_features = model.get_audio_features(inputs.input_features.to("cuda")).cpu()
             train_audio_feat.append(audio_features)
 
     with torch.no_grad():
         for wv,sr in tqdm.tqdm(zip(test_audio,train_sr)):
+            wv = resampler(wv)
             inputs = feature_extractor(wv.squeeze(), return_tensors="pt",sampling_rate=48_000)
             audio_features = model.get_audio_features(inputs.input_features.to("cuda")).cpu()
             test_audio_feat.append(audio_features)
