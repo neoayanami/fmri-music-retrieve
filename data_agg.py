@@ -32,7 +32,10 @@ import nilearn
 from nilearn.plotting import plot_design_matrix
 from nilearn.plotting import plot_contrast_matrix
 
-
+TR=1.5
+stimdur=15
+how_many_fmri_vols=10
+fmri_vol_delay=3
 
 def load_data(subj, avg=True, mask=False):
     base_data_path="/data01/data/fMRI_music_genre/ds003720-download/derivatives"
@@ -100,8 +103,6 @@ def load_data(subj, avg=True, mask=False):
 
     design = []
     conditions=[]
-    TR=1.5
-    stimdur=15
 
     print("Loading nifti and events..")
     for i in tqdm.trange(len(data)):
@@ -145,9 +146,6 @@ def load_data(subj, avg=True, mask=False):
     train_genre=[]
     test_genre=[]
 
-    how_many_fmri_vols=10
-    fmri_vol_delay=3
-
     for run_data, run_event,fn in zip(cleaned_data, events,filenames):
         print(fn)
 
@@ -185,8 +183,20 @@ def load_data(subj, avg=True, mask=False):
         train_fmri_avg=torch.tensor(train_fmri_avg)
         test_fmri_avg=torch.tensor(test_fmri_avg)
     else: 
-        train_fmri_avg=torch.tensor(train_fmri)
-        test_fmri_avg=torch.tensor(test_fmri)
+        train_fmri_avg=[]
+        test_fmri_avg=[]
+        for f in tqdm.tqdm(train_fmri):
+            if (f.shape[0]<how_many_fmri_vols):
+                pad_width = ((0, how_many_fmri_vols - f.shape[0]), (0, 0))
+                f = np.pad(f, pad_width, mode='edge')
+            train_fmri_avg.append(torch.tensor(f))
+        for f in tqdm.tqdm(test_fmri):
+            if (f.shape[0]<how_many_fmri_vols):
+                pad_width = ((0, how_many_fmri_vols - f.shape[0]), (0, 0))
+                f = np.pad(f, pad_width, mode='edge')
+            test_fmri_avg.append(torch.tensor(f))
+        train_fmri_avg = torch.stack(train_fmri_avg)
+        test_fmri_avg = torch.stack(test_fmri_avg)
     
     #"laion/clap-htsat-unfused"
     clap_model_id="laion/larger_clap_music_and_speech"
