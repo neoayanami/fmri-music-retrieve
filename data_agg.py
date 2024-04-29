@@ -34,7 +34,7 @@ from nilearn.plotting import plot_contrast_matrix
 
 
 
-def load_data(subj,mask=False):
+def load_data(subj, avg=True, mask=False):
     base_data_path="/data01/data/fMRI_music_genre/ds003720-download/derivatives"
     base_event_path="/data01/data/fMRI_music_genre/ds003720-download"
 
@@ -175,16 +175,18 @@ def load_data(subj,mask=False):
             else:
                 print("ei")
 
-    train_fmri_avg=[]
-    test_fmri_avg=[]
-
-    for f in tqdm.tqdm(train_fmri):
-        train_fmri_avg.append(f.mean(0))
-    for f in tqdm.tqdm(test_fmri):
-        test_fmri_avg.append(f.mean(0))
-
-    train_fmri_avg=torch.tensor(train_fmri_avg)
-    test_fmri_avg=torch.tensor(test_fmri_avg)
+    if avg:
+        train_fmri_avg=[]
+        test_fmri_avg=[]
+        for f in tqdm.tqdm(train_fmri):
+            train_fmri_avg.append(f.mean(0))
+        for f in tqdm.tqdm(test_fmri):
+            test_fmri_avg.append(f.mean(0))
+        train_fmri_avg=torch.tensor(train_fmri_avg)
+        test_fmri_avg=torch.tensor(test_fmri_avg)
+    else: 
+        train_fmri_avg=torch.tensor(train_fmri)
+        test_fmri_avg=torch.tensor(test_fmri)
     
     #"laion/clap-htsat-unfused"
     clap_model_id="laion/larger_clap_music_and_speech"
