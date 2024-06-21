@@ -84,7 +84,7 @@ class ContrastiveModel(pl.LightningModule):
         cosine_similarity = torch.nn.functional.cosine_similarity(z_i, z_j).mean()
         return 1- cosine_similarity
 
-    def __init__(self,  num_input_channels: int, base_channel_size: int, latent_dim: int, act_fn: object = nn.GELU, temperature=.1,loss_type="contrastive",common_dim=784):
+    def __init__(self,  num_input_channels: int, base_channel_size: int, latent_dim: int, act_fn: object = nn.GELU, temperature=.01,loss_type="contrastive",common_dim=784):
         super().__init__()
         
         self.temperature=temperature
