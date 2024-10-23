@@ -203,7 +203,6 @@ def load_data(subj, avg=True, mask=False):
     model = ClapModel.from_pretrained(clap_model_id).to("cuda")
     feature_extractor = AutoFeatureExtractor.from_pretrained(clap_model_id)
 
-
     train_audio_feat=[]
     test_audio_feat=[]
 
